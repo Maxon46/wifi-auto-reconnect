@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>使用教程 - Win10 Wi-Fi 自动重连工具</title>
+  <style>
+    /* === Design Tokens === */
+    :root {
+      --bg: #F8FAFC;
+      --bg2: #F1F5F9;
+      --ink: #1E293B;
+      --muted: #64748B;
+      --rule: rgba(15, 23, 42, 0.08);
+      --accent: #2563EB;
+      --accent2: #F97316;
+      --code-bg: #1E293B;
+      --code-text: #E2E8F0;
+      --warn-bg: rgba(249, 115, 22, 0.08);
+      --warn-border: rgba(249, 115, 22, 0.3);
+      --warn-ink: #9A3412;
+      --glass-bg: rgba(255, 255, 255, 0.6);
+      --glass-blur: blur(20px) saturate(180%);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --glass-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+      --glass-bg-heavy: rgba(255, 255, 255, 0.72);
+      --glass-blur-heavy: blur(40px) saturate(200%);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-float: 0 8px 30px rgba(0, 0, 0, 0.08);
+      --shadow-modal: 0 24px 80px rgba(0, 0, 0, 0.12);
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+      --duration-fast: 160ms;
+      --duration-normal: 250ms;
+      --duration-modal: 350ms;
+      --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      --mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+      --sidebar-w: 260px;
+    }
+
+    /* === Reset === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+    body {
+      font-family: var(--font);
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: 0;
+    }
+
+    /* === NAV === */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--glass-border);
+      transition: background var(--duration-normal) var(--ease-out);
+    }
+    .nav-inner {
+      max-width: 1400px; margin: 0 auto; padding: 0.9rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand { font-size: 1.05rem; font-weight: 700; color: var(--ink); text-decoration: none; letter-spacing: -0.01em; }
+    .nav-back { display: none; }
+    .nav-actions { display: flex; align-items: center; gap: 0.5rem; }
+    .nav-icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
+      background: transparent; border: 1px solid var(--rule);
+      color: var(--ink); cursor: pointer;
+      transition: background var(--duration-fast) ease, color var(--duration-fast) ease,
+                  transform var(--duration-fast) var(--ease-out);
+    }
+    .nav-icon-btn:hover { background: var(--bg2); color: var(--accent); }
+    .nav-icon-btn:active { transform: scale(0.95); }
+    .nav-lang-btn {
+      padding: 0.3rem 0.65rem; border-radius: var(--radius-sm);
+      background: transparent; border: 1px solid var(--rule);
+      color: var(--muted); font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; font-family: var(--font);
+      transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+    }
+    .nav-lang-btn:hover { background: var(--bg2); color: var(--accent); }
+
+    /* === Layout === */
+    .layout { display: flex; max-width: 1400px; margin: 0 auto; padding-top: 4rem; }
+
+    /* === Custom Scrollbar === */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.3);
+      border-radius: 6px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      transition: background var(--duration-fast) ease;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.5); background-clip: padding-box; }
+    ::selection { background: rgba(37, 99, 235, 0.2); color: var(--ink); }
+    html.dark ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); background-clip: padding-box; }
+    html.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); background-clip: padding-box; }
+    html.dark ::selection { background: rgba(10, 132, 255, 0.3); color: var(--ink); }
+    * { scrollbar-width: thin; scrollbar-color: rgba(100, 116, 139, 0.3) transparent; }
+    html.dark * { scrollbar-color: rgba(255, 255, 255, 0.15) transparent; }
+
+    /* === Sidebar === */
+    .sidebar {
+      position: fixed; top: 4rem; left: 0; bottom: 0; width: var(--sidebar-w);
+      overflow-y: auto; padding: 1.5rem 1rem;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-right: 1px solid var(--glass-border);
+      z-index: 50;
+    }
+    .sidebar-title {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted);
+      padding: 0.5rem 0.75rem 0.75rem;
+    }
+    .sidebar a {
+      display: block; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm);
+      font-size: 0.86rem; color: var(--ink); text-decoration: none;
+      transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+    }
+    .sidebar a:hover { background: rgba(37, 99, 235, 0.06); color: var(--accent); }
+    .sidebar a.active { background: rgba(37, 99, 235, 0.1); color: var(--accent); font-weight: 600; }
+    .sidebar a.sub { padding-left: 1.75rem; font-size: 0.82rem; color: var(--muted); }
+    .sidebar a.sub:hover { color: var(--accent); }
+
+    /* === Main === */
+    .main { flex: 1; margin-left: var(--sidebar-w); padding: 2rem 3rem 6rem; max-width: 1100px; }
+
+    /* === Typography === */
+    h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.15; margin-bottom: 1rem; }
+    h2 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.25; margin-top: 3rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--rule); }
+    h3 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 2rem; margin-bottom: 0.8rem; color: var(--ink); }
+    h4 { font-size: 1rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--ink); }
+    p { margin-bottom: 0.9rem; }
+    a { color: var(--accent); text-decoration: none; transition: color var(--duration-fast) ease; }
+    a:hover { text-decoration: underline; }
+    ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+    li { margin-bottom: 0.4rem; }
+
+    /* === Section === */
+    .section { margin-bottom: 3rem; }
+
+    /* === Quick Start Cards === */
+    .quick-start { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin: 2rem 0 3rem; }
+    .qs-card {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--glass-shadow);
+      padding: 1.5rem;
+      opacity: 0;
+      transform: translateX(30px);
+      transition: opacity 0.6s var(--ease-out),
+                  transform 0.6s var(--ease-out),
+                  box-shadow var(--duration-normal) var(--ease-out);
+    }
+    .qs-card.visible { opacity: 1; transform: translateX(0); }
+    .qs-card:nth-child(1).visible { transition-delay: 0ms; }
+    .qs-card:nth-child(2).visible { transition-delay: 120ms; }
+    .qs-card:nth-child(3).visible { transition-delay: 240ms; }
+    .qs-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-float); }
+    .qs-card:active { transform: translateY(-1px) scale(0.99); }
+    .qs-num {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem; margin-bottom: 0.8rem;
+    }
+    .qs-card h3 { margin-top: 0; }
+    .qs-card .qs-desc { color: var(--muted); font-size: 0.88rem; margin-bottom: 0.8rem; }
+    .qs-card .qs-link {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.4rem 0.9rem; border-radius: var(--radius-sm);
+      background: var(--accent); color: #fff;
+      font-size: 0.82rem; font-weight: 600; text-decoration: none;
+      transition: transform var(--duration-fast) var(--ease-out),
+                  box-shadow var(--duration-fast) var(--ease-out);
+    }
+    .qs-card .qs-link:hover { box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); text-decoration: none; }
+    .qs-card .qs-link:active { transform: scale(0.97); }
+
+    /* === Glass Card === */
+    .card {
+      background: var(--bg);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 1.2rem;
+    }
+    .card.glass {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+    }
+
+    /* === Table === */
+    table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 1rem 0 1.5rem; }
+    th { text-align: left; font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); padding: 0.7rem 1rem; border-bottom: 2px solid var(--rule); }
+    td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--rule); }
+    td code { background: var(--bg2); padding: 0.15rem 0.4rem; border-radius: 4px; font-family: var(--mono); font-size: 0.84rem; color: var(--accent); }
+
+    /* === Code Block === */
+    .code-block {
+      background: var(--code-bg); color: var(--code-text);
+      border-radius: var(--radius-md); padding: 1rem 1.2rem;
+      margin: 0.8rem 0 1.2rem; overflow-x: auto;
+      font-family: var(--mono); font-size: 0.86rem; line-height: 1.6;
+      position: relative;
+    }
+    .code-block::before {
+      content: ''; position: absolute; top: 0.8rem; left: 1.2rem;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #FF5F56; box-shadow: 16px 0 0 #FFBD2E, 32px 0 0 #27C93F;
+    }
+    .code-block code { padding-top: 1.5rem; display: block; }
+    .code-copy {
+      position: absolute; top: 0.6rem; right: 0.6rem; z-index: 2;
+      display: flex; align-items: center; gap: 0.3rem;
+      padding: 0.3rem 0.6rem; border-radius: 6px;
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.7); font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; font-family: var(--font);
+      transition: background var(--duration-fast) ease, color var(--duration-fast) ease,
+                  transform var(--duration-fast) var(--ease-out);
+    }
+    .code-copy:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    .code-copy:active { transform: scale(0.95); }
+    .code-copy.copied { background: rgba(39, 201, 63, 0.2); color: #27C93F; border-color: rgba(39, 201, 63, 0.3); }
+    code.inline { background: var(--bg2); padding: 0.15rem 0.4rem; border-radius: 4px; font-family: var(--mono); font-size: 0.84rem; color: var(--accent); }
+
+    /* === Warning Box === */
+    .warning {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-left: 4px solid var(--accent2);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.2rem;
+      margin: 1rem 0 1.5rem;
+      display: flex; gap: 0.8rem; align-items: flex-start;
+    }
+    .warning-icon { flex-shrink: 0; color: var(--accent2); margin-top: 2px; }
+    .warning-content { flex: 1; color: var(--warn-ink); font-size: 0.9rem; }
+    .warning-content strong { color: var(--warn-ink); }
+    .warning-content code { background: rgba(249, 115, 22, 0.12); color: var(--warn-ink); }
+
+    /* === Steps === */
+    .steps { list-style: none; margin-left: 0; counter-reset: step; }
+    .steps > li {
+      counter-increment: step; position: relative;
+      padding-left: 2.5rem; margin-bottom: 1rem;
+    }
+    .steps > li::before {
+      content: counter(step); position: absolute; left: 0; top: 0;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.82rem; font-weight: 700;
+    }
+
+    /* === Download Button === */
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.6rem 1.2rem; border-radius: var(--radius-md);
+      background: var(--accent); color: #fff;
+      font-size: 0.9rem; font-weight: 600; text-decoration: none;
+      box-shadow: 0 2px 12px rgba(37, 99, 235, 0.2);
+      transition: transform var(--duration-fast) var(--ease-out),
+                  box-shadow var(--duration-fast) var(--ease-out);
+    }
+    .dl-btn:hover { box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3); text-decoration: none; }
+    .dl-btn:active { transform: scale(0.97); }
+
+    /* === FAQ Accordion === */
+    .faq-item {
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      margin-bottom: 0.6rem; overflow: hidden;
+      transition: box-shadow var(--duration-normal) var(--ease-out);
+    }
+    .faq-item:hover { box-shadow: var(--shadow-float); }
+    .faq-q {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.2rem; cursor: pointer;
+      font-weight: 600; font-size: 0.95rem; color: var(--ink);
+      transition: background var(--duration-fast) ease;
+    }
+    .faq-q:hover { background: var(--bg2); }
+    .faq-q .chevron { transition: transform var(--duration-normal) var(--ease-out); flex-shrink: 0; margin-left: 0.8rem; }
+    .faq-item.active .faq-q .chevron { transform: rotate(180deg); }
+    .faq-a {
+      max-height: 0; overflow: hidden;
+      transition: max-height var(--duration-modal) var(--ease-out);
+    }
+    .faq-a-inner { padding: 0 1.2rem 1rem; color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+    /* === Mobile Sidebar Toggle === */
+    .sidebar-toggle { display: none; }
+
+    /* === Floating Back Button === */
+    .float-back-btn {
+      position: fixed; bottom: 1.5rem; right: 4.5rem; z-index: 200;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--accent); color: #fff; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
+      text-decoration: none;
+      transition: transform var(--duration-fast) var(--ease-out),
+                  box-shadow var(--duration-fast) var(--ease-out);
+    }
+    .float-back-btn:hover { box-shadow: 0 6px 28px rgba(37, 99, 235, 0.4); transform: translateY(-2px); }
+    .float-back-btn:active { transform: scale(0.93); }
+    html.dark .float-back-btn { box-shadow: 0 4px 20px rgba(10, 132, 255, 0.3); }
+    html.dark .float-back-btn:hover { box-shadow: 0 6px 28px rgba(10, 132, 255, 0.4); }
+    @media (max-width: 768px) {
+      .float-back-btn { right: 1.5rem; bottom: 4.5rem; }
+    }
+
+    /* === Reveal === */
+    .reveal { opacity: 0; transform: translateY(12px); transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* === Accessibility === */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .nav, .sidebar, .qs-card, .card.glass { background: var(--bg2); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    }
+    @media (prefers-contrast: more) {
+      .card, .faq-item, .qs-card { border: 1px solid var(--ink); box-shadow: none; }
+      .nav, .sidebar { background: var(--bg); border-right: 1px solid var(--ink); }
+    }
+
+    /* === Dark Mode === */
+    html.dark {
+      --bg: #000000; --bg2: #1C1C1E; --ink: #F5F5F7; --muted: #98989D;
+      --rule: rgba(255, 255, 255, 0.08); --accent: #0A84FF; --accent2: #FF9F0A;
+      --code-bg: #1C1C1E; --code-text: #E2E8F0;
+      --warn-bg: rgba(255, 159, 10, 0.1); --warn-border: rgba(255, 159, 10, 0.3); --warn-ink: #FFD699;
+      --glass-bg: rgba(30, 30, 30, 0.6); --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    }
+    html.dark .nav-icon-btn { border-color: rgba(255,255,255,0.1); color: var(--ink); }
+    html.dark .nav-icon-btn:hover { background: rgba(255,255,255,0.08); }
+    html.dark .nav-lang-btn { border-color: rgba(255,255,255,0.1); color: var(--muted); }
+    html.dark code.inline { background: rgba(255,255,255,0.08); }
+    html.dark .faq-item { background: #1C1C1E; }
+    html.dark .faq-q:hover { background: rgba(255,255,255,0.06); }
+
+    /* === Responsive === */
+    @media (max-width: 1024px) {
+      .main { padding: 2rem 2rem 4rem; }
+      .quick-start { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform var(--duration-modal) var(--ease-out); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding: 1.5rem 1rem 4rem; }
+      .sidebar-toggle {
+        display: flex; align-items: center; justify-content: center;
+        position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+        width: 48px; height: 48px; border-radius: 50%;
+        background: var(--accent); color: #fff; border: none; cursor: pointer;
+        box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
+      }
+      h1 { font-size: 1.8rem; }
+      h2 { font-size: 1.4rem; }
+      table { font-size: 0.82rem; }
+      th, td { padding: 0.5rem 0.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVIGATION ===== -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand" data-en="Documentation">使用教程</a>
+      <a href="wifi-reconnect-landing.html" class="nav-back" aria-hidden="true" tabindex="-1">
+        <span data-en="Back to Site">返回官网</span>
+      </a>
+      <div class="nav-actions">
+        <button class="nav-lang-btn" id="langSwitch" onclick="toggleLang()">EN</button>
+        <button class="nav-icon-btn" id="darkToggle" title="深色模式" aria-label="切换深色模式" onclick="toggleDark()">
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M14.5 10.5a7 7 0 1 1-5-12.3A5.5 5.5 0 0 0 14.5 10.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:none"><circle cx="9" cy="9" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 1.5v2m0 11v2m-7.5-7.5h2m11 0h2M3.2 3.2l1.4 1.4m8.8 8.8l1.4 1.4M3.2 14.8l1.4-1.4m8.8-8.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== LAYOUT ===== -->
+  <div class="layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-title" data-en="Table of Contents">目录导航</div>
+      <a href="#quick-start" data-en="Quick Start">快速开始</a>
+      <a href="#ch1" data-en="Ch1: Pre-Installation Prep">第一章：安装前准备</a>
+      <a href="#ch1-1" class="sub" data-en="1.1 System Requirements">1.1 需要什么环境</a>
+      <a href="#ch1-2" class="sub" data-en="1.2 Download Python">1.2 下载 Python</a>
+      <a href="#ch1-3" class="sub" data-en="1.3 Install Python">1.3 安装 Python</a>
+      <a href="#ch1-4" class="sub" data-en="1.4 Verify Installation">1.4 验证安装</a>
+      <a href="#ch1-5" class="sub" data-en="1.5 Additional Dependencies">1.5 关于额外依赖</a>
+      <a href="#ch2" data-en="Ch2: Download & Extract">第二章：下载与解压</a>
+      <a href="#ch2-1" class="sub" data-en="2.1 Download Software">2.1 下载软件</a>
+      <a href="#ch2-2" class="sub" data-en="2.2 Extract">2.2 解压</a>
+      <a href="#ch2-3" class="sub" data-en="2.3 File Description">2.3 文件说明</a>
+      <a href="#ch3" data-en="Ch3: Launch Software">第三章：启动软件</a>
+      <a href="#ch3-1" class="sub" data-en="3.1 Double-Click to Launch">3.1 双击启动</a>
+      <a href="#ch3-2" class="sub" data-en="3.2 Silent Background Launch">3.2 后台静默启动</a>
+      <a href="#ch3-3" class="sub" data-en="3.3 Command Line Launch">3.3 命令行启动</a>
+      <a href="#ch3-4" class="sub" data-en="3.4 Launch Failed">3.4 启动失败</a>
+      <a href="#ch4" data-en="Ch4: First-Time Setup">第四章：首次配置</a>
+      <a href="#ch4-1" class="sub" data-en="4.1 Run as Administrator">4.1 管理员运行</a>
+      <a href="#ch4-2" class="sub" data-en="4.2 Basic Settings">4.2 基本设置</a>
+      <a href="#ch4-3" class="sub" data-en="4.3 Start Monitoring">4.3 开始监控</a>
+      <a href="#ch4-4" class="sub" data-en="4.4 Verify Functionality">4.4 验证功能</a>
+      <a href="#ch5" data-en="Ch5: Daily Usage">第五章：日常使用</a>
+      <a href="#ch5-1" class="sub" data-en="5.1 Interface Overview">5.1 界面说明</a>
+      <a href="#ch5-2" class="sub" data-en="5.2 Auto-Start on Boot">5.2 开机自启</a>
+      <a href="#ch5-3" class="sub" data-en="5.3 Update Software">5.3 更新软件</a>
+      <a href="#ch6" data-en="Ch6: Advanced Settings">第六章：高级配置</a>
+      <a href="#ch6-1" class="sub" data-en="6.1 Auto Driver Reinstall">6.1 自动重装驱动</a>
+      <a href="#ch6-2" class="sub" data-en="6.2 USB Power Saving Principle">6.2 禁用USB节能原理</a>
+      <a href="#ch7" data-en="Ch7: FAQ">第七章：常见问题 FAQ</a>
+      <a href="#ch8" data-en="Ch8: Download Links">第八章：下载链接汇总</a>
+      <a href="#ch9" data-en="Ch9: Important Notes">第九章：注意事项</a>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main">
+
+      <!-- ===== QUICK START ===== -->
+      <section id="quick-start" class="section reveal">
+        <h1 data-en="Documentation">使用教程</h1>
+        <p data-en="From installation to getting started in 3 steps. See the chapters below for detailed instructions.">从安装到上手，3 步速览。详细步骤请查看下方章节。</p>
+        <div class="quick-start">
+          <div class="qs-card">
+            <div class="qs-num">1</div>
+            <h3 data-en="Download & Install Python 3.11.9">下载安装 Python 3.11.9</h3>
+            <p class="qs-desc" data-en='You must check "Add Python to PATH", otherwise the software will not start.'>必须勾选「Add Python to PATH」，否则软件无法启动</p>
+            <a href="https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe" class="qs-link" target="_blank" rel="noopener">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v7m0 0l-3-3m3 3l3-3M2 11.5h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-en="Download Python">下载 Python</span>
+            </a>
+          </div>
+          <div class="qs-card">
+            <div class="qs-num">2</div>
+            <h3 data-en="Download & Extract Software">下载解压本软件</h3>
+            <p class="qs-desc" data-en='Extract to any directory. Recommended: <code class="inline">C:\WiFi监控工具\</code>'>解压到任意目录，推荐 <code class="inline">C:\WiFi监控工具\</code></p>
+            <a href="wifi-reconnect-landing.html#download" class="qs-link">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v7m0 0l-3-3m3 3l3-3M2 11.5h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-en="Download Software">下载软件</span>
+            </a>
+          </div>
+          <div class="qs-card">
+            <div class="qs-num">3</div>
+            <h3 data-en="Double-Click to Launch">双击启动软件</h3>
+            <p class="qs-desc" data-en='Double-click <code class="inline">启动_WiFi监控.bat</code> to launch'>双击 <code class="inline">启动_WiFi监控.bat</code> 即可启动</p>
+            <a href="#ch3" class="qs-link">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8m0 0L8 4m3 3L8 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-en="View Launch Guide">查看启动教程</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== CHAPTER 1 ===== -->
+      <section id="ch1" class="section reveal">
+        <h2 data-en="Chapter 1: Pre-Installation Preparation">第一章：安装前准备</h2>
+
+        <h3 id="ch1-1" data-en="1.1 System Requirements">1.1 需要什么环境</h3>
+        <table>
+          <thead>
+            <tr><th data-en="Item">项目</th><th data-en="Requirement">要求</th><th data-en="Notes">说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td data-en="Operating System">操作系统</td><td>Windows 10/11</td><td data-en="Home or Pro edition">家庭版或专业版均可</td></tr>
+            <tr><td>Python</td><td data-en="3.8+ (3.11 recommended)">3.8 及以上（推荐 3.11）</td><td>Required. <a href="#ch1-2" data-en="Download link included">附下载链接</a></td></tr>
+            <tr><td data-en="Wireless Adapter">无线网卡</td><td data-en="Any Windows-supported adapter">任意 Windows 支持的无线网卡</td><td data-en="USB/PCIe/built-in all supported">USB/PCIe/内置均可</td></tr>
+            <tr><td data-en="Admin Rights">管理员权限</td><td data-en="Recommended">推荐</td><td data-en="For disabling USB power saving, restarting adapter">用于禁用USB节能、重启网卡</td></tr>
+            <tr><td>PowerShell</td><td data-en="Built-in">系统自带</td><td data-en="No extra installation needed">无需额外安装</td></tr>
+            <tr><td>netsh</td><td data-en="Built-in">系统自带</td><td data-en="No extra installation needed">无需额外安装</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="ch1-2" data-en="1.2 Download Python">1.2 下载 Python</h3>
+        <p data-en='Recommended version: <strong>Python 3.11.9 (64-bit)</strong>'>推荐版本：<strong>Python 3.11.9（64位）</strong></p>
+        <p data-en="Official download link (click to download directly):">官方下载地址（直接点击下载）：</p>
+        <div class="code-block"><code>https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe</code><button class="code-copy" onclick="copyCode(this)" data-en="Copy">复制</button></div>
+        <p data-en="Alternative version: Python 3.10.11 (64-bit)">备选版本：Python 3.10.11（64位）</p>
+        <div class="code-block"><code>https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe</code><button class="code-copy" onclick="copyCode(this)" data-en="Copy">复制</button></div>
+        <p data-en="Python official website (for other versions):">Python 官网（选择其他版本）：</p>
+        <div class="code-block"><code>https://www.python.org/downloads/</code><button class="code-copy" onclick="copyCode(this)" data-en="Copy">复制</button></div>
+        <p><a href="https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe" class="dl-btn" target="_blank" rel="noopener"><span data-en="Download Python 3.11.9 (64-bit)">下载 Python 3.11.9 (64位)</span></a></p>
+
+        <h3 id="ch1-3" data-en="1.3 Install Python (Critical Steps - Follow in Order)">1.3 安装 Python（关键步骤，务必按顺序操作）</h3>
+        <div class="warning">
+          <svg class="warning-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L1 18h18L10 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 15h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div class="warning-content" data-en="<strong>Warning:</strong> The following steps must be followed strictly in order, or the software will not start!"><strong>警告：</strong>以下步骤必须严格按顺序执行，否则软件无法启动！</div>
+        </div>
+        <ol class="steps">
+          <li data-en='Double-click to run <code class="inline">python-3.11.9-amd64.exe</code>'>双击运行下载的 <code class="inline">python-3.11.9-amd64.exe</code></li>
+          <li data-en="<strong>★★★ Most Important Step ★★★</strong><br>At the bottom of the installer, check &quot;Add Python 3.11 to PATH&quot;<br>If unchecked, the software will fail to launch!"><strong>★★★ 最重要的一步 ★★★</strong><br>在安装界面最底部，勾选「Add Python 3.11 to PATH」<br>如果不勾选，后面软件会启动不了！</li>
+          <li data-en='Click &quot;Customize installation&quot; for custom install'>点击「Customize installation」自定义安装</li>
+          <li data-en="On the Optional Features page, make sure to check:<br>✅ tcl/tk and IDLE (required for the software UI)<br>✅ pip<br>Others can be left at default">在 Optional Features 页面，确保勾选了：<br>✅ tcl/tk and IDLE（必须勾选，软件界面需要它）<br>✅ pip<br>其他默认勾选即可</li>
+          <li data-en='Click Next. On the Advanced Options page:<br>✅ Check &quot;Add Python to environment variables&quot;<br>Recommended install path: <code class="inline">C:\Python311\</code> (avoid Chinese characters in path)'>点击 Next，在 Advanced Options 页面：<br>✅ 勾选「Add Python to environment variables」<br>建议安装路径改为：<code class="inline">C:\Python311\</code>（不要放中文路径）</li>
+          <li data-en="Click Install to begin installation">点击 Install 开始安装</li>
+          <li data-en='Wait for completion. &quot;Setup was successful&quot; indicates success.'>等待安装完成，出现「Setup was successful」表示成功</li>
+          <li data-en="Click Close to finish">点击 Close 关闭</li>
+        </ol>
+
+        <h3 id="ch1-4" data-en="1.4 Verify Python Installation">1.4 验证 Python 安装成功</h3>
+        <ol class="steps">
+          <li data-en='Press <code class="inline">Win + R</code>, type <code class="inline">cmd</code>, press Enter'>按键盘 <code class="inline">Win + R</code>，输入 <code class="inline">cmd</code>，回车</li>
+          <li data-en='Type in the command line: <code class="inline">python --version</code>'>在命令行输入：<code class="inline">python --version</code></li>
+          <li data-en='If it shows &quot;Python 3.11.9&quot;, the installation is successful'>如果显示「Python 3.11.9」说明安装成功</li>
+          <li data-en='Then type: <code class="inline">python -c "import tkinter"</code>'>再输入：<code class="inline">python -c "import tkinter"</code></li>
+          <li data-en="If there are no errors (jumps to the next line), tkinter is also installed successfully">如果没有任何报错（直接跳到下一行），说明 tkinter 也安装成功了</li>
+        </ol>
+
+        <h3 id="ch1-5" data-en="1.5 Additional Dependencies">1.5 关于额外依赖</h3>
+        <div class="card">
+          <p data-en="<strong>Good news: No additional dependencies required!</strong>"><strong>好消息：本软件无需安装任何额外依赖！</strong></p>
+          <p data-en='This software only uses Python built-in libraries (<code class="inline">tkinter</code>, <code class="inline">subprocess</code>, <code class="inline">threading</code>, <code class="inline">json</code>, <code class="inline">os</code>, etc.). No <code class="inline">pip install</code> of third-party libraries is needed.'>本软件仅使用 Python 内置库（<code class="inline">tkinter</code>、<code class="inline">subprocess</code>、<code class="inline">threading</code>、<code class="inline">json</code>、<code class="inline">os</code> 等），不需要 <code class="inline">pip install</code> 任何第三方库。</p>
+        </div>
+      </section>
+
+      <!-- ===== CHAPTER 2 ===== -->
+      <section id="ch2" class="section reveal">
+        <h2 data-en="Chapter 2: Download & Extract Software">第二章：下载与解压软件</h2>
+
+        <h3 id="ch2-1" data-en="2.1 Download Software">2.1 下载软件</h3>
+        <ul>
+          <li data-en='File name: <code class="inline">win10_wifi_auto_reconnect.zip</code>'>文件名：<code class="inline">win10_wifi_auto_reconnect.zip</code></li>
+          <li data-en="Size: ~21KB">大小：约 21KB</li>
+          <li data-en="Version: v2.3">版本：v2.3</li>
+          <li data-en="Download method: Click the download button on the official website">下载方式：点击官网下载按钮</li>
+        </ul>
+        <p><a href="wifi-reconnect-landing.html#download" class="dl-btn"><span data-en="Go to Official Site to Download">前往官网下载</span></a></p>
+
+        <h3 id="ch2-2" data-en="2.2 Extract">2.2 解压</h3>
+        <p data-en="Extract the zip file to any directory.">将 zip 压缩包解压到任意目录。</p>
+        <div class="warning">
+          <svg class="warning-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L1 18h18L10 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 15h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div class="warning-content" data-en='Recommended extract path: <code>C:\WiFi监控工具\</code>'>推荐解压路径：<code>C:\WiFi监控工具\</code></div>
+        </div>
+
+        <h3 id="ch2-3" data-en="2.3 File Description">2.3 文件说明</h3>
+        <p data-en="After extraction, you will see the following files:">解压后会看到以下文件：</p>
+        <table>
+          <thead>
+            <tr><th data-en="File Name">文件名</th><th data-en="Purpose">作用</th><th data-en="When to Use">什么时候用</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>wifi_monitor.py</code></td><td data-en="Main program">主程序</td><td data-en="Core file, do not delete">核心文件，不要删</td></tr>
+            <tr><td><code>启动_WiFi监控.bat</code></td><td data-en="Double-click to launch">双击启动</td><td data-en="Use this for daily launch">日常启动用这个</td></tr>
+            <tr><td><code>启动_WiFi监控_诊断版.bat</code></td><td data-en="Diagnostic launch script">诊断启动脚本</td><td data-en="Use this to troubleshoot if launch fails">启动失败时用这个排查</td></tr>
+            <tr><td><code>后台静默启动.vbs</code></td><td data-en="Silent background launch">后台静默启动</td><td data-en="Use when you don't want to show the window">不想显示窗口时用</td></tr>
+            <tr><td><code>一键更新.bat</code></td><td data-en="Auto-update script">自动更新脚本</td><td data-en="Use this to update the software later">以后更新软件用</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== CHAPTER 3 ===== -->
+      <section id="ch3" class="section reveal">
+        <h2 data-en="Chapter 3: Launch Software">第三章：启动软件</h2>
+
+        <h3 id="ch3-1" data-en="3.1 Method 1: Double-Click to Launch (Recommended)">3.1 方式一：双击启动（推荐）</h3>
+        <ol class="steps">
+          <li data-en="Navigate to the extracted directory">进入解压目录</li>
+          <li data-en='Double-click <code class="inline">启动_WiFi监控.bat</code>'>双击「<code class="inline">启动_WiFi监控.bat</code>」</li>
+          <li data-en="The software window will appear">会弹出软件界面窗口</li>
+        </ol>
+
+        <h3 id="ch3-2" data-en="3.2 Method 2: Silent Background Launch">3.2 方式二：后台静默启动</h3>
+        <ol class="steps">
+          <li data-en='Double-click <code class="inline">后台静默启动.vbs</code>'>双击「<code class="inline">后台静默启动.vbs</code>」</li>
+          <li data-en="The software runs in the background without showing a window">软件在后台运行，不显示窗口</li>
+          <li data-en="To show the interface, use Method 1">如需显示界面，用方式一</li>
+        </ol>
+
+        <h3 id="ch3-3" data-en="3.3 Method 3: Command Line Launch">3.3 方式三：命令行启动</h3>
+        <ol class="steps">
+          <li data-en='Press <code class="inline">Win + R</code>, type <code class="inline">cmd</code>, press Enter'>按 <code class="inline">Win + R</code>，输入 <code class="inline">cmd</code>，回车</li>
+          <li data-en='Use <code class="inline">cd</code> to navigate to the extracted directory:'>用 <code class="inline">cd</code> 命令进入解压目录：</li>
+        </ol>
+        <div class="code-block"><code>cd /d C:\WiFi监控工具</code><button class="code-copy" onclick="copyCode(this)" data-en="Copy">复制</button></div>
+        <ol class="steps" start="3">
+          <li data-en="Enter the launch command:">输入启动命令：</li>
+        </ol>
+        <div class="code-block"><code>python wifi_monitor.py</code><button class="code-copy" onclick="copyCode(this)" data-en="Copy">复制</button></div>
+
+        <h3 id="ch3-4" data-en="3.4 What to Do If Launch Fails?">3.4 启动失败怎么办？</h3>
+        <ol class="steps">
+          <li data-en='Double-click <code class="inline">启动_WiFi监控_诊断版.bat</code>'>双击「<code class="inline">启动_WiFi监控_诊断版.bat</code>」</li>
+          <li data-en="The diagnostic script will automatically check:">诊断脚本会自动检查：
+            <ul>
+              <li data-en="Whether Python is installed">Python 是否安装</li>
+              <li data-en="Whether the tkinter module is available">tkinter 模块是否可用</li>
+              <li data-en="Whether wifi_monitor.py exists">wifi_monitor.py 文件是否存在</li>
+              <li data-en="Whether there are syntax errors in the code">代码语法是否有错误</li>
+            </ul>
+          </li>
+          <li data-en="Fix the corresponding issue based on the prompts">根据提示修复对应问题</li>
+        </ol>
+      </section>
+
+      <!-- ===== CHAPTER 4 ===== -->
+      <section id="ch4" class="section reveal">
+        <h2 data-en="Chapter 4: First-Time Configuration">第四章：首次使用配置</h2>
+
+        <h3 id="ch4-1" data-en="4.1 Run as Administrator (Recommended)">4.1 以管理员身份运行（推荐）</h3>
+        <div class="warning">
+          <svg class="warning-icon" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L1 18h18L10 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 8v4M10 15h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div class="warning-content" data-en="<strong>Important:</strong> It is recommended to run as administrator on first use. Reasons:<br>· Disabling USB power saving requires admin rights<br>· Restarting the network adapter requires admin rights<br>· Silent driver reinstallation requires admin rights"><strong>重要：</strong>建议首次使用时以管理员身份运行，原因：<br>· 禁用 USB 节能功能需要管理员权限<br>· 重启网卡设备需要管理员权限<br>· 静默重装驱动需要管理员权限</div>
+        </div>
+        <p data-en="How to do this:">操作方法：</p>
+        <ol class="steps">
+          <li data-en='Right-click <code class="inline">启动_WiFi监控.bat</code>'>右键点击「<code class="inline">启动_WiFi监控.bat</code>」</li>
+          <li data-en='Select &quot;Run as administrator&quot;'>选择「以管理员身份运行」</li>
+        </ol>
+
+        <h3 id="ch4-2" data-en="4.2 Basic Settings">4.2 基本设置</h3>
+        <p data-en="Configure the settings in the software interface:">在软件界面的设置区域进行配置：</p>
+        <table>
+          <thead>
+            <tr><th data-en="Setting">设置项</th><th data-en="Default">默认值</th><th data-en="Suggestion">建议</th><th data-en="Description">说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Target SSID</td><td data-en="Empty (auto-detect)">空（自动检测）</td><td data-en="Keep default">保持默认</td><td data-en="Leave empty to auto-connect to current network">留空自动连接当前网络</td></tr>
+            <tr><td data-en="Check Interval">检测间隔</td><td data-en="5 seconds">5秒</td><td data-en="Keep default">保持默认</td><td data-en="How often to check Wi-Fi status">多久检测一次WiFi状态</td></tr>
+            <tr><td data-en="Max Retries">最大重试次数</td><td data-en="10 times">10次</td><td data-en="Keep default">保持默认</td><td data-en="Auto-stop after exceeding this limit">超过后自动停止</td></tr>
+            <tr><td data-en="Reconnect Interval">重连间隔</td><td data-en="3 seconds">3秒</td><td data-en="Keep default">保持默认</td><td data-en="Wait time after reconnection failure">重连失败后等待时间</td></tr>
+            <tr><td data-en="Auto-start monitoring on launch">启动时自动开始监控</td><td data-en="Unchecked">不勾选</td><td data-en="Can check">可勾选</td><td data-en="Automatically monitor on startup">开机即自动监控</td></tr>
+            <tr><td data-en="Disable USB Power Saving">禁用 USB 节能</td><td data-en="Checked">勾选</td><td data-en="Strongly recommended">强烈推荐</td><td data-en="Prevent USB adapter disconnection from power saving">防止USB网卡省电断连</td></tr>
+            <tr><td data-en="Restart adapter after N failures">失败N次后重启网卡</td><td data-en="3 times">3次</td><td data-en="Keep default">保持默认</td><td data-en="Trigger adapter device restart">触发网卡设备重启</td></tr>
+          </tbody>
+        </table>
+        <p data-en='After configuration, click <strong>Save Settings</strong>'>配置完成后点击「<strong>保存设置</strong>」</p>
+
+        <h3 id="ch4-3" data-en="4.3 Start Monitoring">4.3 开始监控</h3>
+        <ol class="steps">
+          <li data-en='Click the blue &quot;Start Monitoring&quot; button'>点击蓝色的「开始监控」按钮</li>
+          <li data-en="The status panel will display real-time Wi-Fi information">状态面板会实时显示当前 Wi-Fi 信息</li>
+          <li data-en="The log area will show detection and reconnection records">日志区会显示检测和重连记录</li>
+        </ol>
+
+        <h3 id="ch4-4" data-en="4.4 Verify Functionality">4.4 验证功能是否正常</h3>
+        <ol class="steps">
+          <li data-en='Confirm the software shows &quot;Monitoring Status: Running&quot;'>确认软件显示「监控状态：运行中」</li>
+          <li data-en="Confirm the status panel shows the current Wi-Fi name, signal strength, etc.">确认状态面板能看到当前 Wi-Fi 名称、信号强度等</li>
+          <li data-en="Manually disconnect Wi-Fi to test:">手动断开 Wi-Fi 测试：
+            <ul>
+              <li data-en="Turn off the Wi-Fi switch">关闭 Wi-Fi 开关</li>
+              <li data-en="Wait 5-10 seconds">等待5-10秒</li>
+              <li data-en='Observe whether the log shows &quot;Disconnection detected&quot; and auto-reconnects'>观察日志是否显示「检测到断开」并自动重连</li>
+              <li data-en="Confirm Wi-Fi connection is restored">确认 Wi-Fi 恢复连接</li>
+            </ul>
+          </li>
+        </ol>
+      </section>
+
+      <!-- ===== CHAPTER 5 ===== -->
+      <section id="ch5" class="section reveal">
+        <h2 data-en="Chapter 5: Daily Usage">第五章：日常使用</h2>
+
+        <h3 id="ch5-1" data-en="5.1 Interface Overview">5.1 界面说明</h3>
+        <h4 data-en="Status Panel (real-time refresh):">状态面板（实时刷新）：</h4>
+        <ul>
+          <li data-en="<strong>Monitoring Status:</strong> Running / Paused / Stopped"><strong>监控状态：</strong>运行中/已暂停/已停止</li>
+          <li data-en="<strong>Current Wi-Fi:</strong> Name of the connected Wi-Fi network"><strong>当前 Wi-Fi：</strong>当前连接的WiFi名称</li>
+          <li data-en="<strong>Retry Count:</strong> Current retries / Cumulative reconnections"><strong>重试次数：</strong>当前重试 / 累计重连</li>
+          <li data-en="<strong>Signal Strength:</strong> Percentage"><strong>信号强度：</strong>百分比</li>
+          <li data-en="<strong>Channel:</strong> Current channel number"><strong>信道：</strong>当前信道号</li>
+          <li data-en="<strong>Transfer Rate:</strong> Mbps"><strong>传输速率：</strong>Mbps</li>
+          <li data-en="<strong>IPv4:</strong> Current IP address"><strong>IPv4：</strong>当前IP地址</li>
+          <li data-en="<strong>Gateway / Latency:</strong> Gateway IP and ping latency (ms)"><strong>网关 / 延迟：</strong>网关IP及ping延迟(ms)</li>
+        </ul>
+        <h4 data-en="Action Buttons:">操作按钮：</h4>
+        <ul>
+          <li data-en="<strong>Start Monitoring</strong> (blue): Start monitoring"><strong>开始监控</strong>（蓝色）：启动监控</li>
+          <li data-en="<strong>Pause</strong> (yellow): Pause monitoring (without exiting)"><strong>暂停</strong>（黄色）：暂停监控（不退出）</li>
+          <li data-en="<strong>Stop</strong> (red): Completely stop monitoring"><strong>停止</strong>（红色）：完全停止监控</li>
+          <li data-en="<strong>Save Settings:</strong> Save configuration"><strong>保存设置：</strong>保存配置</li>
+          <li data-en="<strong>Diagnose</strong> (orange): One-click Wi-Fi status diagnostic"><strong>状态诊断</strong>（橙色）：一键诊断WiFi状态</li>
+          <li data-en="<strong>Clear Log:</strong> Clear the log area"><strong>清空日志：</strong>清空日志区</li>
+          <li data-en="<strong>Update Log</strong> (orange button in title bar): View version update history"><strong>更新日志</strong>（标题栏橙色按钮）：查看版本更新记录</li>
+        </ul>
+
+        <h3 id="ch5-2" data-en="5.2 Set Up Auto-Start on Boot">5.2 设置开机自启</h3>
+        <ol class="steps">
+          <li data-en='Press <code class="inline">Win + R</code>, type: <code class="inline">shell:startup</code>, press Enter to open the Startup folder'>按 <code class="inline">Win + R</code>，输入：<code class="inline">shell:startup</code>，回车，会打开启动文件夹</li>
+          <li data-en='Copy a shortcut of <code class="inline">后台静默启动.vbs</code> to this folder'>把「<code class="inline">后台静默启动.vbs</code>」的快捷方式复制到这个文件夹</li>
+          <li data-en="The software will auto-start on next boot">以后开机会自动运行</li>
+        </ol>
+
+        <h3 id="ch5-3" data-en="5.3 Update Software">5.3 更新软件</h3>
+        <ol class="steps">
+          <li data-en='Download the new <code class="inline">win10_wifi_auto_reconnect.zip</code>'>下载新的 <code class="inline">win10_wifi_auto_reconnect.zip</code></li>
+          <li data-en="Place the zip file in the software directory">把 zip 文件放到软件目录下</li>
+          <li data-en='Double-click <code class="inline">一键更新.bat</code>'>双击「<code class="inline">一键更新.bat</code>」</li>
+          <li data-en="The script will automatically extract and overwrite old files">脚本会自动解压并覆盖旧文件</li>
+        </ol>
+      </section>
+
+      <!-- ===== CHAPTER 6 ===== -->
+      <section id="ch6" class="section reveal">
+        <h2 data-en="Chapter 6: Advanced Configuration">第六章：高级配置</h2>
+
+        <h3 id="ch6-1" data-en="6.1 Configure Automatic Driver Reinstallation">6.1 配置自动重装驱动</h3>
+        <p data-en="Use case: The adapter frequently crashes completely and restarting the adapter is not enough">适用场景：网卡经常彻底挂掉，重启网卡也救不回来</p>
+        <h4 data-en="Step 1: Record driver installation response file">第1步：录制驱动安装响应文件</h4>
+        <ol class="steps">
+          <li data-en='Prepare your adapter driver installer (<code class="inline">.exe</code> file)'>准备你的网卡驱动安装程序（<code class="inline">.exe</code> 文件）</li>
+          <li data-en='Press <code class="inline">Win + R</code>, type <code class="inline">cmd</code>, press Enter'>按 <code class="inline">Win + R</code>，输入 <code class="inline">cmd</code>，回车</li>
+          <li data-en="Execute the recording command (replace the path with your driver path):">执行录制命令（把路径换成你的驱动路径）：</li>
+        </ol>
+        <div class="code-block"><code>"C:\Drivers\Setup_MW.exe" /r /f1"C:\WiFi监控工具\setup.iss"</code><button class="code-copy" onclick="copyCode(this)" data-en="Copy">复制</button></div>
+        <ol class="steps" start="4">
+          <li data-en="The driver installer will appear. Install it through the normal process.">会弹出驱动安装界面，按正常流程安装一遍</li>
+          <li data-en='After installation, the <code class="inline">setup.iss</code> file has been generated.'>安装完成后，<code class="inline">setup.iss</code> 文件已生成</li>
+        </ol>
+        <h4 data-en="Step 2: Configure in the software">第2步：在软件中配置</h4>
+        <ol class="steps">
+          <li data-en="Open the software settings panel">打开软件设置面板</li>
+          <li data-en='Driver installer path: Enter <code class="inline">C:\Drivers\Setup_MW.exe</code>'>驱动安装程序路径：填入 <code class="inline">C:\Drivers\Setup_MW.exe</code></li>
+          <li data-en='Silent response file path: Enter <code class="inline">C:\WiFi监控工具\setup.iss</code>'>静默响应文件路径：填入 <code class="inline">C:\WiFi监控工具\setup.iss</code></li>
+          <li data-en="Save settings">保存设置</li>
+        </ol>
+        <div class="card">
+          <p data-en="After configuration, the software will automatically and silently reinstall the driver after <strong>7+ consecutive failures</strong>.">配置后，软件<strong>连续失败7次以上</strong>会自动静默重装驱动。</p>
+        </div>
+
+        <h3 id="ch6-2" data-en="6.2 How Disabling USB Power Saving Works">6.2 禁用 USB 节能的原理</h3>
+        <p data-en="Windows enables USB selective suspend by default, which cuts power to USB devices when idle to save energy. This is fatal for USB wireless adapters — when the adapter loses power, the connection drops immediately. This software automatically modifies the registry to disable this feature on startup, which requires administrator privileges.">Windows 默认开启 USB 选择性挂起功能，会在空闲时断开 USB 设备供电以省电。这对于 USB 无线网卡是致命的——网卡被断电后连接直接断开。本软件启动时会自动修改注册表禁用此功能，需要管理员权限。</p>
+      </section>
+
+      <!-- ===== CHAPTER 7: FAQ ===== -->
+      <section id="ch7" class="section reveal">
+        <h2 data-en="Chapter 7: FAQ">第七章：常见问题 FAQ</h2>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q1: The bat file flashes and closes when I double-click it. What should I do?">Q1：双击 bat 文件闪退怎么办？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en='Python is not installed correctly or PATH is not configured. Use &quot;启动_WiFi监控_诊断版.bat&quot; to troubleshoot, or reinstall Python and make sure to check &quot;Add Python to PATH&quot;.'>说明 Python 没装好或 PATH 没配。用「启动_WiFi监控_诊断版.bat」排查，或重新安装 Python 务必勾选「Add Python to PATH」。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en='Q2: Error &quot;ModuleNotFoundError: No module named &#39;tkinter&#39;&quot;. What should I do?'>Q2：提示"ModuleNotFoundError: No module named 'tkinter'"怎么办？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en='tkinter is not installed. Reinstall Python and check &quot;tcl/tk and IDLE&quot; in the &quot;Customize installation&quot; step.'>tkinter 没安装。重新安装 Python，在「Customize installation」步骤勾选「tcl/tk and IDLE」。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q3: The software opens but no Wi-Fi information is displayed.">Q3：软件能打开但没有 Wi-Fi 信息显示？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en='Check if your computer has a wireless adapter, confirm the Wi-Fi switch is turned on, and confirm the WLAN AutoConfig service is running (open <code class="inline">services.msc</code> and search for <code class="inline">WLANSvc</code>).'>检查电脑是否有无线网卡，确认 Wi-Fi 开关已打开，确认 WLAN AutoConfig 服务正在运行（<code class="inline">services.msc</code> 查找 <code class="inline">WLANSvc</code>）。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en='Q4: The software shows &quot;No wireless adapter found&quot;.'>Q4：软件显示"未找到无线网卡"？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en='1. Confirm the wireless adapter is plugged in (check the USB port for USB adapters)<br>2. Press <code class="inline">Win + R</code>, type <code class="inline">ncpa.cpl</code> to check if there is a wireless network connection<br>3. If the adapter is disabled, right-click to enable it'>1. 确认无线网卡已插入（USB 网卡检查接口）<br>2. 按 <code class="inline">Win + R</code> 输入 <code class="inline">ncpa.cpl</code> 检查是否有无线网络连接<br>3. 如果网卡被禁用，右键启用</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q5: Disabling USB power saving requires admin rights. Can I skip it?">Q5：禁用 USB 节能需要管理员权限，不勾选可以吗？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en="Yes, the software can run normally. But if you use a USB wireless adapter, it is strongly recommended to run as administrator and enable this option to significantly reduce disconnections.">可以，软件能正常运行。但如果你用的是 USB 无线网卡，强烈建议以管理员身份运行并勾选，能大幅减少断连。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q6: What adapters are supported?">Q6：软件支持什么网卡？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en="All wireless adapters recognized by Windows are supported (USB/PCIe/built-in). Tested with Mercury MW150US USB adapter.">支持所有 Windows 能识别的无线网卡（USB/PCIe/内置均可），已在水星 MW150US USB 网卡上测试通过。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q7: Where can I view the logs?">Q7：日志在哪里看？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en="The bottom half of the software interface is the real-time log area. Logs are not written to files and are cleared when the software is closed.">软件界面下半部分就是实时日志区。日志不会写入文件，关闭软件后日志清空。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q8: What should I do after 10 consecutive failures and auto-stop?">Q8：连续失败10次自动停止后怎么办？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en='Click &quot;Stop&quot; then &quot;Start Monitoring&quot; to restart. It is recommended to use the &quot;Diagnose&quot; button to troubleshoot.'>点击「停止」再点「开始监控」即可重新开始。建议用「状态诊断」按钮排查问题。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q9: Can the software auto-reconnect if I manually turn off the WLAN switch?">Q9：手动关闭电脑 WLAN 开关后软件能自动重连吗？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en="Yes. v2.3 supports detecting WLAN radio off state. It will automatically attempt netsh autoconfig + adapter restart to restore the radio, then continue reconnection.">可以。v2.3版本已支持检测 WLAN 无线电关闭状态，会自动尝试 netsh autoconfig + 重启网卡恢复无线电，然后继续重连。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q10: Will the software automatically reinstall drivers?">Q10：软件会自动重装驱动吗？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en="Not by default. You need to configure the driver installer path and silent response file path in settings. It will only trigger after 7+ consecutive failures.">默认不会。需要在设置中配置驱动安装程序路径和静默响应文件路径后，连续失败7次以上才会触发自动重装。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q11: Is admin permission mandatory?">Q11：必须用管理员权限吗？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en="Not mandatory. But the following features require admin rights: disabling USB power saving, restarting the adapter device, and silent driver reinstallation. With regular permissions, the software can still monitor and reconnect normally, just with fewer recovery methods.">不是必须。但以下功能需要管理员权限：禁用USB节能、重启网卡设备、静默重装驱动。普通权限下软件仍可正常监控和重连，只是恢复手段少一些。</div></div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            <span data-en="Q12: Is Windows 7 supported?">Q12：支持 Windows 7 吗？</span>
+            <svg class="chevron" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 7l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="faq-a"><div class="faq-a-inner" data-en="Not recommended. The software uses PowerShell 5.0+ commands. The PowerShell version bundled with Windows 7 may be too old for compatibility. Windows 10 and above is recommended.">不推荐。软件使用 PowerShell 5.0+ 命令，Windows 7 自带的 PowerShell 版本较低可能不兼容。建议 Windows 10 及以上。</div></div>
+        </div>
+      </section>
+
+      <!-- ===== CHAPTER 8 ===== -->
+      <section id="ch8" class="section reveal">
+        <h2 data-en="Chapter 8: Download Links Summary">第八章：下载链接汇总</h2>
+        <table>
+          <thead>
+            <tr><th data-en="Download Item">下载项</th><th data-en="Link">链接</th><th data-en="Necessity">必要性</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Python 3.11.9 (64-bit)</td><td><a href="https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe" target="_blank" rel="noopener">python-3.11.9-amd64.exe</a></td><td data-en="Required">必装</td></tr>
+            <tr><td>Python 3.10.11 (64-bit)</td><td><a href="https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe" target="_blank" rel="noopener">python-3.10.11-amd64.exe</a></td><td data-en="Alternative">备选</td></tr>
+            <tr><td data-en="Python Official Website">Python 官网</td><td><a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org/downloads</a></td><td data-en="For other versions">选其他版本</td></tr>
+            <tr><td data-en="This Software v2.3">本软件 v2.3</td><td><a href="wifi-reconnect-landing.html#download" data-en="Download button on official site">官网下载按钮</a></td><td data-en="Main program">主程序</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== CHAPTER 9 ===== -->
+      <section id="ch9" class="section reveal">
+        <h2 data-en="Chapter 9: Important Notes">第九章：注意事项</h2>
+        <ol>
+          <li data-en='When installing Python, make sure to check &quot;Add Python to PATH&quot;. This is the most common cause of launch failure.'>Python 安装时务必勾选「Add Python to PATH」，这是最常见的启动失败原因</li>
+          <li data-en='When installing Python, make sure to check &quot;tcl/tk and IDLE&quot;, otherwise the software UI will not display.'>Python 安装时务必勾选「tcl/tk and IDLE」，否则软件界面无法显示</li>
+          <li data-en='USB wireless adapter users are strongly recommended to run as administrator and enable &quot;Disable USB Power Saving&quot;.'>USB 无线网卡用户强烈建议以管理员身份运行并勾选「禁用 USB 节能」</li>
+          <li data-en="The software path can contain Chinese characters, but it is recommended to avoid spaces in the path.">软件路径可以包含中文，但建议路径不要有空格</li>
+          <li data-en='Do not delete any files in the extracted directory, especially <code class="inline">wifi_monitor.py</code>'>不要删除解压目录中的任何文件，特别是 <code class="inline">wifi_monitor.py</code></li>
+          <li data-en='Use &quot;一键更新.bat&quot; to update the software. Do not manually overwrite files.'>更新软件时用「一键更新.bat」，不要手动覆盖文件</li>
+          <li data-en="The driver reinstallation feature is an optional advanced feature. Not configuring it does not affect normal usage.">驱动重装功能为可选高级功能，不配置不影响正常使用</li>
+          <li data-en='If you encounter an unsolvable issue, use the &quot;Diagnose&quot; button for one-click diagnostics.'>如遇无法解决的问题，使用「状态诊断」按钮一键诊断</li>
+        </ol>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===== Floating Back Button ===== -->
+  <a href="wifi-reconnect-landing.html" class="float-back-btn" title="返回官网" aria-label="返回官网">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 5L6 10l6 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+
+  <!-- ===== Mobile Sidebar Toggle ===== -->
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="目录" data-en="Table of Contents">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="19" y2="6"/><line x1="3" y1="12" x2="19" y2="12"/><line x1="3" y1="18" x2="19" y2="18"/></svg>
+  </button>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script>
+    // === Copy Code Block ===
+    function copyCode(btn) {
+      var code = btn.parentElement.querySelector('code');
+      if (!code) return;
+      var text = code.textContent || code.innerText;
+      navigator.clipboard.writeText(text).then(function() {
+        btn.textContent = '已复制';
+        btn.classList.add('copied');
+        setTimeout(function() {
+          var en = document.documentElement.classList.contains('en');
+          btn.textContent = en ? 'Copy' : '复制';
+          btn.classList.remove('copied');
+        }, 1500);
+      });
+    }
+
+    // === Dark Mode Toggle ===
+    (function() {
+      var stored = localStorage.getItem('theme');
+      if (stored === 'dark') document.documentElement.classList.add('dark');
+      updateDarkIcon();
+    })();
+    function toggleDark() {
+      document.documentElement.classList.toggle('dark');
+      var isDark = document.documentElement.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateDarkIcon();
+    }
+    function updateDarkIcon() {
+      var isDark = document.documentElement.classList.contains('dark');
+      var btn = document.getElementById('darkToggle');
+      if (!btn) return;
+      btn.querySelector('.icon-moon').style.display = isDark ? 'none' : '';
+      btn.querySelector('.icon-sun').style.display = isDark ? '' : 'none';
+    }
+
+    // === Language Toggle ===
+    (function() {
+      var stored = localStorage.getItem('lang');
+      if (stored === 'en') switchToEn();
+    })();
+    function toggleLang() {
+      var isEn = document.documentElement.classList.toggle('en');
+      localStorage.setItem('lang', isEn ? 'en' : 'zh');
+      if (isEn) { switchToEn(); }
+      else { switchToZh(); }
+      // Update copy buttons
+      document.querySelectorAll('.code-copy').forEach(function(b) {
+        if (!b.classList.contains('copied')) {
+          b.textContent = isEn ? 'Copy' : '复制';
+        }
+      });
+      // Update lang switch button text
+      document.getElementById('langSwitch').textContent = isEn ? '中文' : 'EN';
+    }
+    function switchToEn() {
+      document.querySelectorAll('[data-en]').forEach(function(el) {
+        if (!el.dataset.zhOriginal) el.dataset.zhOriginal = el.innerHTML;
+        el.innerHTML = el.dataset.en;
+      });
+    }
+    function switchToZh() {
+      document.querySelectorAll('[data-en]').forEach(function(el) {
+        if (el.dataset.zhOriginal) el.innerHTML = el.dataset.zhOriginal;
+      });
+    }
+
+    // === FAQ accordion ===
+    function toggleFaq(el) {
+      var item = el.parentElement;
+      var answer = item.querySelector('.faq-a');
+      var isActive = item.classList.contains('active');
+      document.querySelectorAll('.faq-item').forEach(function(f) {
+        f.classList.remove('active');
+        f.querySelector('.faq-a').style.maxHeight = '0';
+      });
+      if (!isActive) {
+        item.classList.add('active');
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var firstFaq = document.querySelector('.faq-item');
+      if (firstFaq) {
+        firstFaq.classList.add('active');
+        firstFaq.querySelector('.faq-a').style.maxHeight = firstFaq.querySelector('.faq-a').scrollHeight + 'px';
+      }
+    });
+
+    // === Mobile sidebar toggle ===
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.toggle('open');
+    });
+    document.querySelectorAll('.sidebar a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+          document.getElementById('sidebar').classList.remove('open');
+        }
+      });
+    });
+
+    // === Active section highlight (rAF throttled + passive) ===
+    var allAnchors = document.querySelectorAll('[id^="ch"], [id^="quick-start"]');
+    var sidebarLinks = document.querySelectorAll('.sidebar a');
+    var scrollTick = false;
+    function updateActiveLink() {
+      var scrollPos = window.scrollY + 120;
+      var currentId = '';
+      allAnchors.forEach(function(el) {
+        if (el.offsetTop <= scrollPos) currentId = el.id;
+      });
+      sidebarLinks.forEach(function(link) {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + currentId);
+      });
+      scrollTick = false;
+    }
+
+    // === Sidebar link click: close mobile sidebar ===
+    document.querySelectorAll('.sidebar a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+          document.getElementById('sidebar').classList.remove('open');
+        }
+      });
+    });
+    window.addEventListener('scroll', function() {
+      if (!scrollTick) { scrollTick = true; requestAnimationFrame(updateActiveLink); }
+    }, { passive: true });
+
+    // === Scroll reveal ===
+    var revealObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          requestAnimationFrame(function() { entry.target.classList.add('visible'); });
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal').forEach(function(el) { revealObserver.observe(el); });
+    // Quick-start cards: slide in from right
+    document.querySelectorAll('.qs-card').forEach(function(el) { revealObserver.observe(el); });
+
+    updateActiveLink();
+  </script>
+
+</body>
+</html>
