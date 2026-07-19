@@ -1,0 +1,13 @@
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backup
+wifi-reconnect-landing-001/
